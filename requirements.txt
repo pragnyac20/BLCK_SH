@@ -1,0 +1,8 @@
+Flask==2.2.5
+cryptography==41.0.1
+requests==2.31.0
+SQLAlchemy==2.0.0
+# fabric-sdk-py==1.0.0
+python-dotenv==1.0.0
+Flask-CORS==4.0.0
+pytest

@@ -1,0 +1,137 @@
+version: '3.8'
+
+services:
+  # Flask Application
+  flask-app:
+    build: .
+    container_name: education-blockchain-api
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=development
+      - DATABASE_URL=sqlite:///education_records.db
+      - INSTITUTION_ID=inst123
+      - INSTITUTION_NAME=Cambridge Institute of Technology
+    volumes:
+      - ./app:/app
+      - ./data:/data
+    depends_on:
+      - orderer
+      - peer0-org1
+    networks:
+      - blockchain-network
+
+  # Hyperledger Fabric Orderer
+  orderer:
+    image: hyperledger/fabric-orderer:2.5
+    container_name: orderer.education.com
+    environment:
+      - FABRIC_LOGGING_SPEC=INFO
+      - ORDERER_GENERAL_LISTENADDRESS=0.0.0.0
+      - ORDERER_GENERAL_LISTENPORT=7050
+      - ORDERER_GENERAL_GENESISMETHOD=file
+      - ORDERER_GENERAL_GENESISFILE=/var/hyperledger/orderer/orderer.genesis.block
+      - ORDERER_GENERAL_LOCALMSPID=OrdererMSP
+      - ORDERER_GENERAL_LOCALMSPDIR=/var/hyperledger/orderer/msp
+      - ORDERER_GENERAL_TLS_ENABLED=true
+      - ORDERER_GENERAL_TLS_PRIVATEKEY=/var/hyperledger/orderer/tls/server.key
+      - ORDERER_GENERAL_TLS_CERTIFICATE=/var/hyperledger/orderer/tls/server.crt
+      - ORDERER_GENERAL_TLS_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
+    command: orderer
+    volumes:
+      - ./fabric-config/genesis.block:/var/hyperledger/orderer/orderer.genesis.block
+      - ./fabric-config/crypto-config/ordererOrganizations/education.com/orderers/orderer.education.com/msp:/var/hyperledger/orderer/msp
+      - ./fabric-config/crypto-config/ordererOrganizations/education.com/orderers/orderer.education.com/tls:/var/hyperledger/orderer/tls
+    ports:
+      - "7050:7050"
+    networks:
+      - blockchain-network
+
+  # Peer0 for Organization 1
+  peer0-org1:
+    image: hyperledger/fabric-peer:2.5
+    container_name: peer0.org1.education.com
+    environment:
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=blockchain-network
+      - FABRIC_LOGGING_SPEC=INFO
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_GOSSIP_USELEADERELECTION=true
+      - CORE_PEER_GOSSIP_ORGLEADER=false
+      - CORE_PEER_PROFILE_ENABLED=true
+      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      - CORE_PEER_ID=peer0.org1.education.com
+      - CORE_PEER_ADDRESS=peer0.org1.education.com:7051
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:7051
+      - CORE_PEER_CHAINCODEADDRESS=peer0.org1.education.com:7052
+      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:7052
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org1.education.com:7051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org1.education.com:7051
+      - CORE_PEER_LOCALMSPID=Org1MSP
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+    command: peer node start
+    volumes:
+      - /var/run/:/host/var/run/
+      - ./fabric-config/crypto-config/peerOrganizations/org1.education.com/peers/peer0.org1.education.com/msp:/etc/hyperledger/fabric/msp
+      - ./fabric-config/crypto-config/peerOrganizations/org1.education.com/peers/peer0.org1.education.com/tls:/etc/hyperledger/fabric/tls
+      - ./chaincode:/opt/gopath/src/github.com/chaincode
+    ports:
+      - "7051:7051"
+    depends_on:
+      - orderer
+    networks:
+      - blockchain-network
+
+  # CouchDB for Peer0 (optional, for state database)
+  couchdb0:
+    image: couchdb:3.3
+    container_name: couchdb0
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=adminpw
+    ports:
+      - "5984:5984"
+    networks:
+      - blockchain-network
+
+  # CLI for interacting with the network
+  cli:
+    container_name: cli
+    image: hyperledger/fabric-tools:2.5
+    tty: true
+    stdin_open: true
+    environment:
+      - GOPATH=/opt/gopath
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - FABRIC_LOGGING_SPEC=INFO
+      - CORE_PEER_ID=cli
+      - CORE_PEER_ADDRESS=peer0.org1.education.com:7051
+      - CORE_PEER_LOCALMSPID=Org1MSP
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_TLS_CERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.education.com/peers/peer0.org1.education.com/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.education.com/peers/peer0.org1.education.com/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.education.com/peers/peer0.org1.education.com/tls/ca.crt
+      - CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/org1.education.com/users/Admin@org1.education.com/msp
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+    command: /bin/bash
+    volumes:
+      - /var/run/:/host/var/run/
+      - ./chaincode:/opt/gopath/src/github.com/chaincode
+      - ./fabric-config/crypto-config:/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/
+    depends_on:
+      - orderer
+      - peer0-org1
+    networks:
+      - blockchain-network
+
+networks:
+  blockchain-network:
+    driver: bridge
+
+volumes:
+  orderer.education.com:
+  peer0.org1.education.com:
+  couchdb0:
