@@ -3,6 +3,7 @@ from flask_cors import CORS
 import os
 import uuid
 from datetime import datetime
+from flask import render_template  # make sure this import exists
 
 from crypto import CryptoManager, compute_sha256
 from blockchain_adapter import BlockchainAdapter
@@ -364,6 +365,10 @@ def not_found(error):
 def internal_error(error):
     return jsonify({'error': 'Internal server error'}), 500
 
+@app.route('/app')
+def frontend():
+    """Serve the frontend UI"""
+    return render_template('index.html')
 
 # Run the application
 if __name__ == '__main__':

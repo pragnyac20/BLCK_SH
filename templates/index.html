@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>EduChain — Admin Dashboard</title>
+
+  <!-- Google font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+ <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+
+
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <div class="brand">EduChain</div>
+      <div id="health" class="health offline">Offline</div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="grid">
+      <!-- Add student card -->
+      <div class="card">
+        <h3>Add Student</h3>
+        <form id="studentForm">
+          <label>Student ID<input type="text" id="studentId" required></label>
+          <label>Name<input type="text" id="studentName" required></label>
+          <label>Email<input type="email" id="studentEmail" required></label>
+          <label>Metadata (JSON)<textarea id="studentMeta" placeholder='{"department":"CSE","year":"2025"}'></textarea></label>
+          <button type="submit" class="btn">Create Student</button>
+        </form>
+        <div id="studentMsg" class="msg"></div>
+      </div>
+
+      <!-- Issue record card -->
+      <div class="card">
+        <h3>Issue Record</h3>
+        <form id="issueForm">
+          <label>Student ID<input type="text" id="issueStudentId" placeholder="STU001" required></label>
+          <label>Course<input type="text" id="issueCourse" required></label>
+          <label>Grade<input type="text" id="issueGrade" required></label>
+          <label>Extra JSON Payload<textarea id="issuePayload" placeholder='{"semester":"8","remarks":"Excellent"}'></textarea></label>
+          <button type="submit" class="btn">Issue Record</button>
+        </form>
+        <div id="issueMsg" class="msg"></div>
+      </div>
+
+      <!-- Verify / Get record card -->
+      <div class="card">
+        <h3>Verify & View Record</h3>
+        <label>Record ID<input type="text" id="recordIdInput" placeholder="rec_xxx" ></label>
+        <div class="row">
+          <button id="btnGetRecord" class="btn outline">Get Encrypted Record</button>
+          <button id="btnDecryptRecord" class="btn outline">Decrypt Record</button>
+          <button id="btnVerify" class="btn outline">Verify Record</button>
+        </div>
+        <pre id="recordResult" class="result"></pre>
+      </div>
+
+      <!-- Transactions -->
+      <div class="card">
+        <h3>Transactions</h3>
+        <button id="btnLoadTx" class="btn">Load Transactions</button>
+        <ul id="txList" class="tx-list"></ul>
+      </div>
+    </section>
+  </main>
+
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+
+</body>
+</html>
